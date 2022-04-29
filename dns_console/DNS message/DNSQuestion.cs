@@ -114,6 +114,7 @@ namespace dns_console.DNS_message
             return result.ToArray();
         }
 
+        // TODO: rewrite this method
         public void FromBytes(byte[] bytes)
         {
             var site = FromBytesToSite(bytes);

@@ -303,6 +303,8 @@ namespace dns_console.DNS_message
             return _header;
         }
 
+        
+        // TODO: rewrite this shit
         public void FromBytes(byte[] bytes, int offset = 0)
         {
             if (bytes.Length < 12 + offset) throw new Exception("Incorrect bytes length!");

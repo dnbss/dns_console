@@ -188,25 +188,29 @@ namespace dns_console.DNS_message
             NAME = String.Join(".", site.ToArray());
 
 
-            byte[] t = new byte[10];
+            byte[] type = new byte[2];
+            byte[] Class = new byte[2];
+            byte[] ttl = new byte[4];
+            byte[] rdlength = new byte[2];
 
-            Array.Copy(bytes, _nameByte.Count, t, 0, 10);
+            Array.Copy(bytes, _nameByte.Count, type, 0, 2);
+            Array.Copy(bytes, _nameByte.Count + 2, Class, 0, 2);
+            Array.Copy(bytes, _nameByte.Count + 4, ttl, 0, 4);
+            Array.Copy(bytes, _nameByte.Count + 8, rdlength, 0, 2);
 
-            for (int i = t.Length - 4; i < t.Length; i += 2)
-            {
-                var h = t[i];
-
-                t[i] = t[i + 1];
-
-                t[i + 1] = h;
-            }
+            TYPE = BitConverter.ToUInt16(type.Reverse().ToArray(), 0);
+            CLASS = BitConverter.ToUInt16(Class.Reverse().ToArray(), 0);
+            TTL = BitConverter.ToUInt32(ttl.Reverse().ToArray(), 0);
+            RDLENGTH = BitConverter.ToUInt16(rdlength.Reverse().ToArray(), 0);
 
 
-            TYPE = BitConverter.ToUInt16(t, 0);
-            CLASS = BitConverter.ToUInt16(t, 2);
-            TTL = BitConverter.ToUInt32(t, 4);
-            RDLENGTH = BitConverter.ToUInt16(t, 8);
-            bytes.CopyTo(RDATA, 10);
+            RDATA = new byte[RDLENGTH];
+            Array.Copy(bytes, _nameByte.Count + 10, RDATA, 0, RDLENGTH);
+        }
+
+        public string DataToString()
+        {
+            return String.Join('.', RDATA);
         }
 
         private List<string> FromBytesToSite(byte[] bytes)
