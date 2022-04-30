@@ -27,9 +27,27 @@ namespace dns_console
 
             byte[] k = question.ToBytes();*/
 
-            DNSResourceRecord record = new DNSResourceRecord();
+            //DNSResourceRecord record = new DNSResourceRecord();
 
-            byte[] data = new byte[]
+            byte[] header = new byte[]
+            {
+                0, 1, 2, 3, 0, 1, 0, 1, 0, 0, 0, 0
+            };
+
+            byte[] question = new byte[]
+            {
+                3,
+                119, 119, 119,
+                2,
+                121, 97,
+                2,
+                114, 117,
+                0,
+                0, 1,
+                0, 1
+            };
+
+            byte[] record = new byte[]
             {
                 3,
                 119, 119, 119,
@@ -45,11 +63,13 @@ namespace dns_console
                 64, 233, 163, 100
             };
 
-            record.FromBytes(data);
+            List<byte> mes = new List<byte>();
+            mes.AddRange(header);
+            mes.AddRange(question);
+            mes.AddRange(record);
 
-            var t = record.ToBytes();
-
-            Console.WriteLine(record.DataToString());
+            DNSMessage message = new DNSMessage();
+            message.FromBytes(mes.ToArray());
         }
     }
 }

@@ -51,6 +51,7 @@ namespace dns_console.DNS_message
 
         private byte[] _rdata;
 
+        public int Size => ToBytes().Length;
         public string NAME
         {
             get { return _name; }
@@ -181,8 +182,13 @@ namespace dns_console.DNS_message
             return result.ToArray();
         }
 
-        public void FromBytes(byte[] bytes)
+        public void FromBytes(byte[] b, int offset = 0)
         {
+            byte[] bytes = new byte[b.Length - offset];
+
+            Array.Copy(b, offset, bytes, 0, bytes.Length);
+
+
             var site = FromBytesToSite(bytes);
 
             NAME = String.Join(".", site.ToArray());

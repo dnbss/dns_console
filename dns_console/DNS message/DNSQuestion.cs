@@ -32,6 +32,8 @@ namespace dns_console.DNS_message
         private ushort _qclass;
 
         private List<byte> _qclassByte = new List<byte>();
+
+        public int Size => ToBytes().Length;
         public string QNAME
         {
             get { return _qname; }
@@ -115,13 +117,21 @@ namespace dns_console.DNS_message
         }
 
         // TODO: rewrite this method
-        public void FromBytes(byte[] bytes)
+        public void FromBytes(byte[] b, int offset = 0)
         {
+            byte[] bytes = new byte[b.Length - offset];
+
+            Array.Copy(b, offset, bytes, 0, bytes.Length);
+
+
             var site = FromBytesToSite(bytes);
+
+            QNAME = String.Join(".", site.ToArray());
+
 
             byte[] t = new byte[4];
 
-            Array.Copy(bytes, bytes.Length - 4, t, 0, 4);
+            Array.Copy(bytes, _qnameByte.Count, t, 0, 4);
 
             for (int i = t.Length - 4; i < t.Length; i += 2)
             {
@@ -131,9 +141,7 @@ namespace dns_console.DNS_message
 
                 t[i + 1] = h;
             }
-
-
-            QNAME = String.Join(".", site.ToArray());
+            
             QTYPE = BitConverter.ToUInt16(t, 0);
             QCLASS = BitConverter.ToUInt16(t, 2);
         }
