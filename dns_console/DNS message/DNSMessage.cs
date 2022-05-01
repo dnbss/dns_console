@@ -6,6 +6,20 @@ using System.Threading.Tasks;
 
 namespace dns_console.DNS_message
 {
+    /*           Format 
+        +---------------------+
+        |        Header       |
+        +---------------------+
+        |       Question      | the question for the name server
+        +---------------------+
+        |        Answer       | RRs answering the question
+        +---------------------+
+        |      Authority      | RRs pointing toward an authority
+        +---------------------+
+        |      Additional     | RRs holding additional information
+        +---------------------+
+     */
+
     internal class DNSMessage
     {
         private DNSHeader _header;
@@ -28,12 +42,12 @@ namespace dns_console.DNS_message
             _answers = answers;
         }
 
-
         public byte[] ToBytes()
         {
             List<byte> bytes = new List<byte>();
 
             bytes.AddRange(_header.ToBytes());
+
             _questions.ForEach(x => bytes.AddRange(x.ToBytes()));
             _answers.ForEach(x => bytes.AddRange(x.ToBytes()));
 

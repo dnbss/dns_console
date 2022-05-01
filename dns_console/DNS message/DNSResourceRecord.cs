@@ -209,7 +209,6 @@ namespace dns_console.DNS_message
             TTL = BitConverter.ToUInt32(ttl.Reverse().ToArray(), 0);
             RDLENGTH = BitConverter.ToUInt16(rdlength.Reverse().ToArray(), 0);
 
-
             RDATA = new byte[RDLENGTH];
             Array.Copy(bytes, _nameByte.Count + 10, RDATA, 0, RDLENGTH);
         }

@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using dns_console.DNS_message;
+using dns_console.DNS_server;
 
 namespace dns_console
 {
@@ -8,6 +13,10 @@ namespace dns_console
     {
         static void Main(string[] args)
         {
+            DNSServer server = new DNSServer();
+
+            server.Start();
+
             /*DNSQuestion question = new DNSQuestion();
 
             byte[] data = new byte[]
@@ -29,9 +38,9 @@ namespace dns_console
 
             //DNSResourceRecord record = new DNSResourceRecord();
 
-            byte[] header = new byte[]
+            /*byte[] header = new byte[]
             {
-                0, 1, 2, 3, 0, 1, 0, 1, 0, 0, 0, 0
+                0, 1, 2, 3, 0, 2, 0, 2, 0, 0, 0, 0
             };
 
             byte[] question = new byte[]
@@ -66,10 +75,16 @@ namespace dns_console
             List<byte> mes = new List<byte>();
             mes.AddRange(header);
             mes.AddRange(question);
+            mes.AddRange(question);
+            mes.AddRange(record);
             mes.AddRange(record);
 
             DNSMessage message = new DNSMessage();
-            message.FromBytes(mes.ToArray());
+            message.FromBytes(mes.ToArray());*/
+            //var t = message.ToBytes();
+
+
+
         }
     }
 }
