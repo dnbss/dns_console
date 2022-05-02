@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using dns_console.DNS_message;
 using dns_console.DNS_server;
+using dns_console.Interfaces;
 
 namespace dns_console
 {
@@ -13,9 +14,10 @@ namespace dns_console
     {
         static void Main(string[] args)
         {
-            DNSServer server = new DNSServer();
+            IListener listener = new UdpListener();
 
-            server.Start();
+            listener.Start();
+
 
             /*DNSQuestion question = new DNSQuestion();
 
