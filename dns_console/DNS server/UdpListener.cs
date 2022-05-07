@@ -35,9 +35,12 @@ namespace dns_console.DNS_server
 
             _endPoint = new IPEndPoint(IPAddress, Port);
 
+            _epFrom = new IPEndPoint(IPAddress.Any, Port);
+
             _listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
             _listener.Bind(_endPoint);
+
         }
 
         public void Start()
@@ -50,9 +53,13 @@ namespace dns_console.DNS_server
             {
                 byte[] buffer = new byte[512];
 
-                _listener.Receive(buffer);
+                _listener.ReceiveFrom(buffer, ref _epFrom);
 
                 message.FromBytes(buffer);
+
+                _listener.SendTo(buffer, _epFrom);
+
+                Console.WriteLine($"data sended to {_epFrom.ToString()}");
             }
         }
 

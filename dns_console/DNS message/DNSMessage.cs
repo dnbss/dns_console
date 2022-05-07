@@ -28,18 +28,57 @@ namespace dns_console.DNS_message
 
         private List<DNSResourceRecord> _answers;
 
+        private List<DNSResourceRecord> _authoritys;
+
+        private List<DNSResourceRecord> _additionals;
+
+        public DNSHeader Header
+        {
+            get { return _header; }
+            set { _header = value; }
+        }
+
+        public DNSQuestion[] Questions
+        {
+            get { return _questions.ToArray(); }
+            set { _questions = value.ToList(); }
+        }
+
+        public DNSResourceRecord[] Answers
+        {
+            get { return _answers.ToArray(); }
+            set { _answers = value.ToList(); }
+        }
+
+        public DNSResourceRecord[] Authoritys
+        {
+            get { return _authoritys.ToArray(); }
+            set { _authoritys = value.ToList(); }
+        }
+
+        public DNSResourceRecord[] Additionals
+        {
+            get { return _additionals.ToArray(); }
+            set { _additionals = value.ToList(); }
+        }
+
         public DNSMessage()
         {
             _header = new DNSHeader();
             _questions = new List<DNSQuestion>();
             _answers = new List<DNSResourceRecord>();
+            _authoritys = new List<DNSResourceRecord>();
+            _additionals = new List<DNSResourceRecord>();
         }
 
-        public DNSMessage(DNSHeader header, List<DNSQuestion> questions, List<DNSResourceRecord> answers)
+        public DNSMessage(DNSHeader header, List<DNSQuestion> questions
+            , List<DNSResourceRecord> answers, List<DNSResourceRecord> authoritys, List<DNSResourceRecord> additionals)
         {
             _header = header;
             _questions = questions;
             _answers = answers;
+            _authoritys = authoritys;
+            _additionals = additionals;
         }
 
         public byte[] ToBytes()
@@ -50,6 +89,8 @@ namespace dns_console.DNS_message
 
             _questions.ForEach(x => bytes.AddRange(x.ToBytes()));
             _answers.ForEach(x => bytes.AddRange(x.ToBytes()));
+            _authoritys.ForEach(x => bytes.AddRange(x.ToBytes()));
+            _additionals.ForEach(x => bytes.AddRange(x.ToBytes()));
 
             return bytes.ToArray();
         }
@@ -70,6 +111,10 @@ namespace dns_console.DNS_message
             FromBytesQuestionList(tail, ref offset);
 
             FromBytesAnswerList(tail, ref offset);
+
+            FromBytesAuthorityList(tail, ref offset);
+
+            FromBytesAdditionalList(tail, ref offset);
         }
 
         private void FromBytesHeader(byte[] bytes)
@@ -111,6 +156,38 @@ namespace dns_console.DNS_message
             }
 
             _answers = answers.ToList();
+        }
+
+        private void FromBytesAuthorityList(byte[] bytes, ref int offset)
+        {
+            DNSResourceRecord[] authoritys = new DNSResourceRecord[_header.NSCOUNT];
+
+            for (int i = 0; i < authoritys.Length; i++)
+            {
+                authoritys[i] = new DNSResourceRecord();
+
+                authoritys[i].FromBytes(bytes, offset);
+
+                offset += authoritys[i].Size;
+            }
+
+            _authoritys = authoritys.ToList();
+        }
+
+        private void FromBytesAdditionalList(byte[] bytes, ref int offset)
+        {
+            DNSResourceRecord[] additionals = new DNSResourceRecord[_header.ARCOUNT];
+
+            for (int i = 0; i < additionals.Length; i++)
+            {
+                additionals[i] = new DNSResourceRecord();
+
+                additionals[i].FromBytes(bytes, offset);
+
+                offset += additionals[i].Size;
+            }
+
+            _additionals = additionals.ToList();
         }
     }
 }

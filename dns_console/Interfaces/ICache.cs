@@ -8,10 +8,9 @@ namespace dns_console.Interfaces
 {
     internal interface ICache
     {
-        public byte[] Get(string key);
+        public string[] Get(string key);
 
-        public void Set(byte[] bytes, string key, int ttl);
-
+        public void Set(string[] bytes, string key, int ttl);
 
     }
 }

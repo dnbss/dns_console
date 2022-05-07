@@ -1,4 +1,5 @@
-﻿using System;
+﻿using dns_console.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -188,11 +189,7 @@ namespace dns_console.DNS_message
 
             Array.Copy(b, offset, bytes, 0, bytes.Length);
 
-
-            var site = FromBytesToSite(bytes);
-
-            NAME = String.Join(".", site.ToArray());
-
+            FromBytesToSite(bytes);
 
             byte[] type = new byte[2];
             byte[] Class = new byte[2];
@@ -215,14 +212,37 @@ namespace dns_console.DNS_message
 
         public string DataToString()
         {
+            if (TYPE == (ushort)DNSType.AAAA)
+            {
+                string hexStr = Convert.ToHexString(RDATA);
+
+                for (int i = 4; i < hexStr.Length; i += 5)
+                {
+                    hexStr = hexStr.Insert(i, ":");
+                }
+
+                return hexStr;
+            }
+
             return String.Join('.', RDATA);
         }
 
-        private List<string> FromBytesToSite(byte[] bytes)
+        private void FromBytesToSite(byte[] bytes)
         {
             int i = 0;
 
             List<string> site = new List<string>();
+
+            if ((bytes[0] & 192) == 192)
+            {
+                _nameByte = new List<byte>();
+
+                _nameByte.Add(bytes[0]);
+                _nameByte.Add(bytes[1]);
+
+                return;
+            }
+
 
             while (bytes[i] != 0)
             {
@@ -238,7 +258,9 @@ namespace dns_console.DNS_message
                 i += b;
             }
 
-            return site;
+
+            NAME = String.Join(".", site.ToArray());
+
         }
     }
 }

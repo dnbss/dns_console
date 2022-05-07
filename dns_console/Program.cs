@@ -7,6 +7,8 @@ using System.Text;
 using dns_console.DNS_message;
 using dns_console.DNS_server;
 using dns_console.Interfaces;
+using dns_console.DNS_cache;
+using dns_console.Enums;
 
 namespace dns_console
 {
@@ -14,12 +16,54 @@ namespace dns_console
     {
         static void Main(string[] args)
         {
-            IListener listener = new UdpListener();
+            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-            listener.Start();
+            socket.Bind(new IPEndPoint(IPAddress.Parse("192.168.4.144"), 53));
 
+            EndPoint from = new IPEndPoint(IPAddress.Any, 0);
 
-            /*DNSQuestion question = new DNSQuestion();
+            DNSMessage message = new DNSMessage();
+
+            DNSResolver resolver = new DNSResolver(null, socket);
+
+            int i = 0;
+
+            while (true)
+            {
+                i++;
+
+                if (i == 3) 
+                {
+                    Console.WriteLine();
+                }
+
+                byte[] buffer = new byte[512];
+
+                socket.ReceiveFrom(buffer, ref from);
+
+                message.FromBytes(buffer);
+
+                /*if (message.Questions[0].QTYPE == (ushort)DNSType.PTR)
+                {
+                    continue;
+                }*/
+
+                var ans = resolver.Solve(message);
+
+                ans.Answers.ToList().ForEach(answer => Console.WriteLine(answer.DataToString()));
+
+                Console.WriteLine("================");
+
+                socket.SendTo(ans.ToBytes(), from);
+
+                //ans.ToList().ForEach(x => Console.WriteLine(x.DataToString()));
+            }
+
+            /*IListener listener = new UdpListener();
+
+            listener.Start();*/
+
+            /*DNSCache cache = new DNSCache();
 
             byte[] data = new byte[]
             {
@@ -29,6 +73,15 @@ namespace dns_console
                 121, 97,
                 2,
                 114, 117,
+                0,
+                0, 1,
+                0, 1
+            };*/
+
+            /*DNSQuestion question = new DNSQuestion();
+
+            byte[] data = new byte[]
+            {
                 0,
                 0, 1,
                 0, 1
