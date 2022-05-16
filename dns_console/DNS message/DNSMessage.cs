@@ -81,6 +81,22 @@ namespace dns_console.DNS_message
             _additionals = additionals;
         }
 
+
+        public void Dump()
+        {
+            Console.WriteLine("Questions: ");
+            _questions.ToList().ForEach(_ => Console.WriteLine($"QNAME: {_.QNAME}   QTYPE: {_.QTYPE}    QCLASS: {_.QCLASS}"));
+
+            Console.WriteLine("Answers: ");
+            _answers.ToList().ForEach(_ => Console.WriteLine($"CLASS: {_.CLASS}     TYPE: {_.TYPE}      DATA: {_.DataToString()}"));
+
+            Console.WriteLine("Authoritys:");
+            _authoritys.ToList().ForEach(_ => Console.WriteLine($"CLASS: {_.CLASS}     TYPE: {_.TYPE}      DATA: {_.DataToString()}"));
+
+            Console.WriteLine("Additionals:");
+            _additionals.ToList().ForEach(_ => Console.WriteLine($"CLASS: {_.CLASS}     TYPE: {_.TYPE}      DATA: {_.DataToString()}"));
+        }
+
         public byte[] ToBytes()
         {
             List<byte> bytes = new List<byte>();

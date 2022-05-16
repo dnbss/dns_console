@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace dns_console.Interfaces
 {
-    internal interface ICache
+    internal interface ICache<TKey, TValue>
     {
-        public string[] Get(string key);
+        public TValue Get(TKey key);
 
-        public void Set(string[] bytes, string key, int ttl);
+        public void Set(TKey key, TValue value, uint ttl);
 
     }
 }

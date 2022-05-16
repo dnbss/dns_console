@@ -146,7 +146,7 @@ namespace dns_console.DNS_message
             QCLASS = BitConverter.ToUInt16(t, 2);
         }
 
-        private List<string> FromBytesToSite(byte[] bytes)
+        public List<string> FromBytesToSite(byte[] bytes)
         {
             int i = 0;
 

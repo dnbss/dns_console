@@ -24,39 +24,48 @@ namespace dns_console
 
             DNSMessage message = new DNSMessage();
 
-            DNSResolver resolver = new DNSResolver(null, socket);
+            DNSCache cache = new DNSCache();
 
-            int i = 0;
+            DNSResolver resolver = new DNSResolver(cache, socket);
 
             while (true)
             {
-                i++;
-
-                if (i == 3) 
-                {
-                    Console.WriteLine();
-                }
-
                 byte[] buffer = new byte[512];
 
+                Console.WriteLine("===Waiting...===");
                 socket.ReceiveFrom(buffer, ref from);
 
                 message.FromBytes(buffer);
 
-                /*if (message.Questions[0].QTYPE == (ushort)DNSType.PTR)
+                if (message.Questions[0].QTYPE == (ushort)DNSType.PTR)
                 {
+                    socket.SendTo(message.ToBytes(), from);
+
                     continue;
-                }*/
+                }
+
+                if (message.Questions[0].QTYPE == (ushort)DNSType.AAAA)
+                {
+
+                }
+
+                Console.WriteLine("====Received====");
+                message.Dump();
+                Console.WriteLine("================");
+                Console.WriteLine();
 
                 var ans = resolver.Solve(message);
 
-                ans.Answers.ToList().ForEach(answer => Console.WriteLine(answer.DataToString()));
-
-                Console.WriteLine("================");
-
                 socket.SendTo(ans.ToBytes(), from);
 
-                //ans.ToList().ForEach(x => Console.WriteLine(x.DataToString()));
+                Console.WriteLine("====Sending=====");
+                ans.Dump();
+                Console.WriteLine("================");
+                Console.WriteLine();
+
+                //ans.Answers.ToList().ForEach(answer => Console.WriteLine(answer.DataToString()));
+
+
             }
 
             /*IListener listener = new UdpListener();

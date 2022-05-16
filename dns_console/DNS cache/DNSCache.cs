@@ -1,4 +1,6 @@
-﻿using dns_console.Interfaces;
+﻿using dns_console.DNS_message;
+using dns_console.Enums;
+using dns_console.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
@@ -8,17 +10,17 @@ using System.Threading.Tasks;
 
 namespace dns_console.DNS_cache
 {
-    internal class DNSCache : ICache
+    internal class DNSCache : ICache<DNSQuestion, DNSMessage>
     {
         private MemoryCache _cache = new MemoryCache(new MemoryCacheOptions()); 
 
-        private List<string> _keys = new List<string>();
-
-        public string[] Get(string key)
+        public DNSMessage Get(DNSQuestion key)
         {
-            string[] entry;
+            DNSMessage entry;
 
-            if (_cache.TryGetValue(key, out entry))
+            string strKey = key.QNAME + " " + ((DNSType)key.QTYPE).ToString() + " " + ((DNSClass)key.QCLASS).ToString();
+
+            if (_cache.TryGetValue(strKey, out entry))
             {
                 return entry;
             }
@@ -26,13 +28,13 @@ namespace dns_console.DNS_cache
             return null;
         }
 
-        public void Set(string[] bytes, string key, int ttl)
+        public void Set(DNSQuestion key, DNSMessage value, uint ttl)
         {
-            _keys.Add(key);
-
             var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(DateTimeOffset.Now + TimeSpan.FromSeconds(ttl));
 
-            _cache.Set(key, bytes, cacheEntryOptions);
+            string strKey = key.QNAME + " " + ((DNSType)key.QTYPE).ToString() + " " + ((DNSClass)key.QCLASS).ToString();
+
+            _cache.Set(strKey, value, cacheEntryOptions);
         }
     }
 }
