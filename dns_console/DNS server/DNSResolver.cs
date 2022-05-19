@@ -14,7 +14,7 @@ namespace dns_console.DNS_server
 {
     internal class DNSResolver
     {
-        private DNSCache _cache;
+        private ICache<DNSQuestion, DNSMessage> _cache;
 
         private Socket _socket;
 
@@ -29,7 +29,7 @@ namespace dns_console.DNS_server
         private DNSResourceRecord _root;
 
         public readonly int Port = 53;
-        public DNSResolver(DNSCache cache, Socket socket)
+        public DNSResolver(ICache<DNSQuestion, DNSMessage> cache, Socket socket, byte[] root)
         {
             _cache = cache;
 
@@ -37,6 +37,8 @@ namespace dns_console.DNS_server
 
             _root = new DNSResourceRecord("", (ushort)DNSType.A, (ushort)DNSClass.IN
                 , 0, 4, new byte[] { 198, 41, 0, 4 });
+
+            _root.RDATA = root;
 
             _stack = new Stack<DNSResourceRecord>();
 
@@ -70,35 +72,42 @@ namespace dns_console.DNS_server
 
         private void SetToCache(DNSMessage m)
         {
-            _cache.Set(m.Questions[0], m, m.Answers.ToList().Min(x => x.TTL));
+            uint defaultMin = 300;
+
+            var min = m.Answers.Length == 0 ? defaultMin : m.Answers.ToList().Select(_ => _.TTL).Min();
+
+            _cache.Set(m.Questions[0], m, min);
         }
 
-        private void SolveForNS(DNSMessage mes, DNSMessage m)
+        private void SolveForNS(DNSMessage curMes, DNSMessage initMes, Stack<DNSResourceRecord> stack)
         {
-            if (mes.Authoritys.Length != 0 && mes.Additionals.Length == 0)
+            if (!(curMes.Questions[0].QTYPE == (ushort)DNSType.A 
+                && curMes.Authoritys.Any(_ => _.TYPE == (ushort)DNSType.NS)))
             {
-                var authority = mes.Authoritys[0];
+                return;
+            }
 
-                DNSQuestion q = new DNSQuestion();
+            var authority = curMes.Authoritys[0];
 
-                q.QCLASS = m.Questions[0].QCLASS;
-                q.QTYPE = m.Questions[0].QTYPE;
-                q.QNAME = String.Join(".", q.FromBytesToSite(authority.RDATA));
+            DNSQuestion q = new DNSQuestion();
 
-                DNSMessage me = new DNSMessage();
-                me.Questions = new DNSQuestion[] { q };
+            q.QCLASS = initMes.Questions[0].QCLASS;
+            q.QTYPE = initMes.Questions[0].QTYPE;
+            q.QNAME = String.Join(".", q.FromBytesToSite(authority.RDATA));
 
-                me.Header = m.Header;
+            DNSMessage me = new DNSMessage();
+            me.Questions = new DNSQuestion[] { q };
 
-                var ans = DFS(me);
+            me.Header = initMes.Header;
 
-                if (ans.Answers.Length != 0)
-                {
-                    _stack.Clear();
+            var ans = DFS(me);
 
-                    _stack.Push(new DNSResourceRecord("", ans.Answers[0].TYPE, (ushort)DNSClass.IN
-                    , 0, ans.Answers[0].RDLENGTH, ans.Answers[0].RDATA));
-                }
+            if (ans.Answers.Length != 0)
+            {
+                stack.Clear();
+
+                stack.Push(new DNSResourceRecord("", ans.Answers[0].TYPE, (ushort)DNSClass.IN
+                , 0, ans.Answers[0].RDLENGTH, ans.Answers[0].RDATA));
             }
         }
 
@@ -118,62 +127,34 @@ namespace dns_console.DNS_server
             {
                 record = stack.Pop();
 
-                if (record.TYPE != (ushort)DNSType.A)
-                {
-                    continue;
-                }
+                if (record.TYPE != (ushort)DNSType.A) { continue; }
 
                 _endPoint = new IPEndPoint(IPAddress.Parse(record.DataToString()), Port);
-
                 _socket.SendTo(m.ToBytes(), _endPoint);
 
                 var length = _socket.Receive(buffer);
 
                 byte[] cropBuffer = new byte[length];
-
                 Array.Copy(buffer, cropBuffer, length);
 
                 mes.FromBytes(cropBuffer);
 
-                Console.WriteLine($"++++++End Point {_endPoint.Address}+++++");
+                /*Console.WriteLine($"++++++End Point {_endPoint.Address}+++++");
                 mes.Dump();
                 Console.WriteLine("++++++++++++++++++++");
-                Console.WriteLine();
+                Console.WriteLine();*/
 
-                foreach(var item in mes.Additionals)
+                mes.Additionals.ToList().ForEach(a => stack.Push(a));
+
+                if (mes.Header.ANCOUNT == 0
+                    && mes.Authoritys.Length != 0 && mes.Additionals.Length == 0)
                 {
-                    if (item.TYPE == (ushort)DNSType.A)
-                    {
-                        stack.Push(item);
-                    }
+                    stack.Clear();
+
+                    SolveForNS(mes, m, stack);
                 }
 
-                if (mes.Authoritys.Length != 0 && mes.Additionals.Length == 0 && mes.Questions[0].QTYPE == (ushort)DNSType.A)
-                {
-                    var authority = mes.Authoritys[0];
-
-                    DNSQuestion q = new DNSQuestion();
-
-                    q.QCLASS = m.Questions[0].QCLASS;
-                    q.QTYPE = m.Questions[0].QTYPE;
-                    q.QNAME = String.Join(".", q.FromBytesToSite(authority.RDATA));
-
-                    DNSMessage me = new DNSMessage();
-                    me.Questions = new DNSQuestion[] { q };
-
-                    me.Header = m.Header;
-
-                    var ans = DFS(me);
-
-                    if (ans.Answers.Length != 0)
-                    {
-                        stack.Clear();
-
-                        stack.Push(new DNSResourceRecord("", ans.Answers[0].TYPE, (ushort)DNSClass.IN
-                        , 0, ans.Answers[0].RDLENGTH, ans.Answers[0].RDATA));
-                    }
-                }
-
+                
             }
 
             return mes;
@@ -181,14 +162,14 @@ namespace dns_console.DNS_server
 
         public DNSMessage Solve(DNSMessage m)
         {
-            /*var cachingData = GetFromCache(m);
+            var cachingData = GetFromCache(m);
 
             if (cachingData != null)
             {
                 Console.WriteLine("******************\nData is taken from the cache\n*********************\n");
 
                 return cachingData;
-            }*/
+            }
 
             var question = m.Questions;
 
@@ -210,7 +191,7 @@ namespace dns_console.DNS_server
             result.Header.ANCOUNT = (ushort)result.Answers.Length;
             result.Header.NSCOUNT = (ushort)result.Authoritys.Length;
 
-            //SetToCache(result);
+            SetToCache(result);
 
             return result;
         }

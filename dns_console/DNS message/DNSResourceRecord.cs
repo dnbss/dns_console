@@ -183,23 +183,22 @@ namespace dns_console.DNS_message
             return result.ToArray();
         }
 
-        public void FromBytes(byte[] b, int offset = 0)
+        public void FromBytes(byte[] bytes, int offset = 0)
         {
-            byte[] bytes = new byte[b.Length - offset];
 
-            Array.Copy(b, offset, bytes, 0, bytes.Length);
-
-            FromBytesToSite(bytes);
+            FromBytesToSite(bytes, offset);
 
             byte[] type = new byte[2];
             byte[] Class = new byte[2];
             byte[] ttl = new byte[4];
             byte[] rdlength = new byte[2];
 
-            Array.Copy(bytes, _nameByte.Count, type, 0, 2);
-            Array.Copy(bytes, _nameByte.Count + 2, Class, 0, 2);
-            Array.Copy(bytes, _nameByte.Count + 4, ttl, 0, 4);
-            Array.Copy(bytes, _nameByte.Count + 8, rdlength, 0, 2);
+            var os = _nameByte.Count + offset;
+
+            Array.Copy(bytes, os, type, 0, 2);
+            Array.Copy(bytes, os + 2, Class, 0, 2);
+            Array.Copy(bytes, os + 4, ttl, 0, 4);
+            Array.Copy(bytes, os + 8, rdlength, 0, 2);
 
             TYPE = BitConverter.ToUInt16(type.Reverse().ToArray(), 0);
             CLASS = BitConverter.ToUInt16(Class.Reverse().ToArray(), 0);
@@ -207,7 +206,7 @@ namespace dns_console.DNS_message
             RDLENGTH = BitConverter.ToUInt16(rdlength.Reverse().ToArray(), 0);
 
             RDATA = new byte[RDLENGTH];
-            Array.Copy(bytes, _nameByte.Count + 10, RDATA, 0, RDLENGTH);
+            Array.Copy(bytes, os + 10, RDATA, 0, RDLENGTH);
         }
 
         public string DataToString()
@@ -227,25 +226,92 @@ namespace dns_console.DNS_message
             return String.Join('.', RDATA);
         }
 
-        private void FromBytesToSite(byte[] bytes)
+        private void FromBytesToSite(byte[] bytes, int offset)
         {
-            int i = 0;
+            int i = offset;
 
             List<string> site = new List<string>();
 
-            if ((bytes[0] & 192) == 192)
+            List<byte> nameByte = new List<byte>(); 
+
+            List<byte> nameByteCompressed = new List<byte>();
+
+            while (true)
             {
-                _nameByte = new List<byte>();
 
-                _nameByte.Add(bytes[0]);
-                _nameByte.Add(bytes[1]);
+                if ((bytes[i] & 192) == 192)
+                {
+                    byte[] arr = new byte[2];
 
-                return;
+                    Array.Copy(bytes, i, arr, 0, 2);
+
+                    arr[0] = (byte)(bytes[i] & ~192);
+
+                    var os = BitConverter.ToInt16(arr.Reverse().ToArray(), 0);
+
+                    OffsetBytes(bytes, os, site);
+
+                    byte[] b = new byte[2];
+
+                    Array.Copy(bytes, i, b, 0, 2);
+
+                    nameByteCompressed.AddRange(b);
+
+                    break;
+                }
+
+                if (bytes[i] == 0)
+                {
+                    nameByte.Add(bytes[i]);
+
+                    break;
+                }
+
+                var len = bytes[i++];
+
+                nameByte.Add(len);
+
+                byte[] domen = new byte[len];
+
+                nameByte.AddRange(domen.ToList());
+
+                Array.Copy(bytes, i, domen, 0, len);
+
+                site.Add(Encoding.UTF8.GetString(domen));
+
+                i += len;
+
             }
 
+            NAME = String.Join(".", site.ToArray());
+
+            _nameByte = new List<byte>();
+
+            _nameByte.AddRange(nameByte);
+            _nameByte.AddRange(nameByteCompressed);
+        }
+
+        private void OffsetBytes(byte[] bytes, int DNSOffset, List<string> site)
+        {
+            int i = DNSOffset;
 
             while (bytes[i] != 0)
             {
+
+                if ((bytes[i] & 192) == 192)
+                {
+                    byte[] arr = new byte[2];
+
+                    Array.Copy(bytes, i, arr, 0, 2);
+
+                    arr[0] = (byte)(bytes[i] & ~192);
+
+                    var os = BitConverter.ToInt16(arr.Reverse().ToArray(), 0);
+
+                    OffsetBytes(bytes, os, site);
+
+                    return;
+                }
 
                 var b = bytes[i++];
 
@@ -257,9 +323,6 @@ namespace dns_console.DNS_message
 
                 i += b;
             }
-
-
-            NAME = String.Join(".", site.ToArray());
 
         }
     }

@@ -117,20 +117,20 @@ namespace dns_console.DNS_message
             FromBytesHeader(bytes);
 
 
-            byte[] tail = new byte[bytes.Length - 12];
+            /*byte[] tail = new byte[bytes.Length - 12];
 
-            Array.Copy(bytes, 12, tail, 0, tail.Length);
+            Array.Copy(bytes, 12, tail, 0, tail.Length);*/
 
 
-            int offset = 0;
+            int offset = 12;
 
-            FromBytesQuestionList(tail, ref offset);
+            FromBytesQuestionList(bytes, ref offset);
 
-            FromBytesAnswerList(tail, ref offset);
+            FromBytesAnswerList(bytes, ref offset);
 
-            FromBytesAuthorityList(tail, ref offset);
+            FromBytesAuthorityList(bytes, ref offset);
 
-            FromBytesAdditionalList(tail, ref offset);
+            FromBytesAdditionalList(bytes, ref offset);
         }
 
         private void FromBytesHeader(byte[] bytes)
