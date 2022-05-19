@@ -46,6 +46,8 @@ namespace dns_console.DNS_server
             while (true)
             {
 
+                from = new IPEndPoint(IPAddress.Any, 0);
+
                 byte[] buffer = new byte[512];
 
                 Console.WriteLine("===Waiting...===");
