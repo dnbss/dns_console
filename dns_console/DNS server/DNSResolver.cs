@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using dns_console.DNS_cache;
 using dns_console.Interfaces;
 using dns_console.DNS_message;
 using System.Net.Sockets;

@@ -1,14 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using dns_console.DNS_message;
 using dns_console.DNS_server;
-using dns_console.Interfaces;
-using dns_console.DNS_cache;
-using dns_console.Enums;
+
 
 namespace dns_console
 {

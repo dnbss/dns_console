@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace dns_console.Interfaces
+﻿namespace dns_console.Interfaces
 {
     internal interface ICache<TKey, TValue>
     {
