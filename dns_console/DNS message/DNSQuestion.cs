@@ -148,6 +148,8 @@ namespace dns_console.DNS_message
 
         private void OffsetBytes(byte[] bytes, int DNSOffset, List<string> site)
         {
+            if (bytes == null) return;
+
             int i = DNSOffset;
 
             while (bytes[i] != 0)
