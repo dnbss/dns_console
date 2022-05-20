@@ -33,7 +33,9 @@ namespace dns_console.DNS_server
         {
             _cache = cache;
 
-            _socket = socket;
+            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            _socket.Bind(new IPEndPoint(IPAddress.Any, Port));
 
             _root = new DNSResourceRecord("", (ushort)DNSType.A, (ushort)DNSClass.IN
                 , 0, 4, new byte[] { 198, 41, 0, 4 });
@@ -77,6 +79,32 @@ namespace dns_console.DNS_server
             var min = m.Answers.Length == 0 ? defaultMin : m.Answers.ToList().Select(_ => _.TTL).Min();
 
             _cache.Set(m.Questions[0], m, min);
+        }
+
+        private void SolveForCNAME(DNSMessage curMes, DNSMessage initMes, Stack<DNSResourceRecord> stack)
+        {
+         
+            var answer = curMes.Answers[0];
+
+            DNSQuestion q = new DNSQuestion();
+
+            q.QCLASS = initMes.Questions[0].QCLASS;
+            q.QTYPE = initMes.Questions[0].QTYPE;
+            q.QNAME = String.Join(".", q.FromBytesToSite(answer.RDATA, curMes));
+
+            DNSMessage me = new DNSMessage();
+            me.Questions = new DNSQuestion[] { q };
+
+            me.Header = initMes.Header;
+
+            var ans = DFS(me);
+
+            if (ans.Answers.Length != 0)
+            {
+                stack.Clear();
+
+                curMes.Answers = ans.Answers;
+            }
         }
 
         private void SolveForNS(DNSMessage curMes, DNSMessage initMes, Stack<DNSResourceRecord> stack)
@@ -146,6 +174,7 @@ namespace dns_console.DNS_server
 
                 mes.Additionals.ToList().ForEach(a => stack.Push(a));
 
+
                 if (mes.Header.ANCOUNT == 0
                     && mes.Authoritys.Length != 0 && mes.Additionals.Length == 0)
                 {
@@ -154,7 +183,11 @@ namespace dns_console.DNS_server
                     SolveForNS(mes, m, stack);
                 }
 
-                
+                if (mes.Header.ANCOUNT != 0 && mes.Answers.All(_ => _.TYPE == (ushort)DNSType.CNAME))
+                {
+                    SolveForCNAME(mes, m, stack);
+
+                }
             }
 
             return mes;

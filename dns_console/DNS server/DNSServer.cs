@@ -26,16 +26,16 @@ namespace dns_console.DNS_server
         {
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-            _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
+            _socket.Bind(new IPEndPoint(IPAddress.Loopback, _port));
 
             _cache = new DNSCache();
         }
 
         public void Start(string s = "198.41.0.4")
         {
-            var ss = Dns.GetHostEntry(Dns.GetHostName()).AddressList.Last();
+            var ip = IPAddress.Loopback;
 
-            Console.WriteLine($"Server has started on IP: {ss}, port: 53");
+            Console.WriteLine($"Server has started on IP: {ip}, port: 53");
 
             _resolver = new DNSResolver(_cache, _socket, IPAddress.Parse(s).GetAddressBytes());
 

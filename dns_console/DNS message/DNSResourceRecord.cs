@@ -289,6 +289,7 @@ namespace dns_console.DNS_message
 
             _nameByte.AddRange(nameByte);
             _nameByte.AddRange(nameByteCompressed);
+
         }
 
         private void OffsetBytes(byte[] bytes, int DNSOffset, List<string> site)

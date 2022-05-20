@@ -146,14 +146,67 @@ namespace dns_console.DNS_message
             QCLASS = BitConverter.ToUInt16(t, 2);
         }
 
-        public List<string> FromBytesToSite(byte[] bytes)
+        private void OffsetBytes(byte[] bytes, int DNSOffset, List<string> site)
         {
+            int i = DNSOffset;
+
+            while (bytes[i] != 0)
+            {
+
+                if ((bytes[i] & 192) == 192)
+                {
+                    byte[] arr = new byte[2];
+
+                    Array.Copy(bytes, i, arr, 0, 2);
+
+                    arr[0] = (byte)(bytes[i] & ~192);
+
+                    var os = BitConverter.ToInt16(arr.Reverse().ToArray(), 0);
+
+                    OffsetBytes(bytes, os, site);
+
+                    return;
+                }
+
+                var b = bytes[i++];
+
+                byte[] domen = new byte[b];
+
+                Array.Copy(bytes, i, domen, 0, b);
+
+                site.Add(Encoding.UTF8.GetString(domen));
+
+                i += b;
+            }
+
+        }
+
+        public List<string> FromBytesToSite(byte[] bytes, DNSMessage mes = null)
+        {
+            byte[] mesBytes = mes?.ToBytes();
+            
+
             int i = 0;
 
             List<string> site = new List<string>();
 
             while (bytes[i] != 0)
             {
+                if ((bytes[i] & 192) == 192)
+                {
+                    byte[] arr = new byte[2];
+
+                    Array.Copy(bytes, i, arr, 0, 2);
+
+                    arr[0] = (byte)(bytes[i] & ~192);
+
+                    var os = BitConverter.ToInt16(arr.Reverse().ToArray(), 0);
+
+                    OffsetBytes(mesBytes, os, site);
+
+                    break;
+                }
+
 
                 var b = bytes[i++];
 
